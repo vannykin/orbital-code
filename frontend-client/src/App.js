@@ -25,7 +25,7 @@ function App() {
 	}, []);
 
 	const GetCourses = () => {
-		return selectedCourses;
+		return JSON.parse(localStorage.getItem("selected"));
 	}
 
 	// TO RETURN ALL COURSES IN DATABASE
