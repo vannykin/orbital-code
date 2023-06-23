@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react';
 const api_base = 'http://localhost:3001';
 
 function App() {
+	const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+	const toggleTheme = () => { theme === 'light' ? setTheme('dark') : setTheme('light') };
+
 	const [popupActive, setPopupActive] = useState(false);
 	const [sempopupActive, setSemPopupActive] = useState(false);
 
 	const [courses, setCourses] = useState([]);
 	const [selectedCourses, setSelectedCourses] = useState(JSON.parse(localStorage.getItem("selected")) || []);
 	const [term, setTerm] = useState(localStorage.getItem("term") || "0");
+	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
 	// eslint-disable-next-line
 	const [AOA, setAOA] = useState(JSON.parse(localStorage.getItem("AOA")) || []);
 	// eslint-disable-next-line
@@ -16,8 +20,12 @@ function App() {
 	const [allCombis, setAllCombis] = useState(JSON.parse(localStorage.getItem("allCombis")) || []);
 	// eslint-disable-next-line
 	const [allCombisInfo, setAllCombisInfo] = useState(JSON.parse(localStorage.getItem("allCombisInfo")) || []);
-	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
 
+	useEffect(() => {
+		localStorage.setItem('theme', theme);
+		document.body.className = theme;
+	  }, [theme]);
+	
 	// TO RETURN ALL CHOSEN COURSES IN 'SELECTED COURSES'
 	useEffect(() => {
 		GetCourses();
@@ -375,12 +383,22 @@ function App() {
 
 							<div className="text">{course.code} {course.name}</div>
 
-							<div className="delete-course" onClick={() => deleteCourse(course._id)}>x</div>
+							<div className="delete-course" onClick={() => deleteCourse(course._id)}>X</div>
 						</div>
 				)) : (
 					<p></p>
 				)}
             </div>
+			<div className={`App ${theme}`}>
+				<input type="checkbox" id="darkmode-toggle" className="darkmode-input" onClick={toggleTheme}/>
+				<label for="darkmode-toggle">
+					<svg class="sun" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<g id="Environment / Sun">
+						<path id="Vector" d="M12 4V2M12 20V22M6.41421 6.41421L5 5M17.728 17.728L19.1422 19.1422M4 12H2M20 12H22M17.7285 6.41421L19.1427 5M6.4147 17.728L5.00049 19.1422M12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+					</g>
+					</svg>
+				</label>
+			</div>
 			<div>
 				{selectedCourses.length === 0 && <div>
 					<button className="SemButton" id="chooseSemButton" onClick={e => { setSemPopupActive(true); }}>Select a Semester</button>
