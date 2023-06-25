@@ -19,66 +19,49 @@
 }
 
 label {
-	width: 50px;
-	height: 25px;
-	position: absolute;
-	display: block;
-	background: var(--dark-alt);
-	top: 45px;
-	right: 150px;
-	border-radius: 200px;
-	box-shadow: inset 0px 5px 15px rgba(111, 111, 111, 0.4), inset 0px -5px 15px rgba(255, 255, 255, 0.4);
+	width: 0px;
+	height: 0px;
 	cursor: pointer;
 }
 
 label.after {
-	content: "";
-	width: 180px;
-	height: 180px;
-	position: absolute;
-	top: 10px;
-	left: 10px;
-	background: linear-gradient(180deg, #ffcc89, #d8860b);
-	border-radius: 180px;
-	box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+	width: 0px;
+	height: 0px;
 }
 
 .darkmode-input {
-	width: 0;
-	height: 0;
+	width: 0px;
+	height: 0px;
 	visibility: hidden;
-}
-
-.darkmode-input:checked + label:after {
-	left: 490px;
-	transform: translateX(-100%);
-	background: linear-gradient(180deg, #777, #3a3a3a);
-}
-label, label:after {
-	transition: 0.3s;
 }
 
 label svg {
 	position: absolute;
-	width: 20px;
-	top: 0px;
-	z-index: 100;
+	width: 40px;
 }
+
 label svg.sun {
-	left:40px;
-	fill:#fff;
-	transition: 0.3s;
+	right:150px;
+	top:-345px;
+	fill:#ffe32f;
 }
+
+.darkmode-input:checked + label svg.sun {
+	fill: var(--dark-alt);
+}
+
 label svg.moon {
-	left:340px;
-	fill:#7e7e7e;
-	transition: 0.3s;
+	right:150px;
+	top:-345px;
+	fill: #fef9ef;
 }
-input:checked + label svg.sun {
-	fill:#7e7e7e;
+
+.darkmode-input:checked + label svg.moon path.stars {
+	fill: #C6C6C6;
 }
-input:checked + label svg.moon {
-	fill:#fff;
+
+.darkmode-input:checked + label svg.moon path.crescent {
+	fill: #ffe32f;
 }
 
 * {

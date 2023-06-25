@@ -3,23 +3,21 @@ const api_base = 'http://localhost:3001';
 
 function App() {
 	const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-	const toggleTheme = () => { theme === 'light' ? setTheme('dark') : setTheme('light') };
+	const toggleTheme = () => { document.getElementById("darkmode-toggle").checked ? setTheme('dark') : setTheme('light') };
 
 	const [popupActive, setPopupActive] = useState(false);
 	const [sempopupActive, setSemPopupActive] = useState(false);
 
 	const [courses, setCourses] = useState([]);
+
 	const [selectedCourses, setSelectedCourses] = useState(JSON.parse(localStorage.getItem("selected")) || []);
 	const [term, setTerm] = useState(localStorage.getItem("term") || "0");
 	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
 	// eslint-disable-next-line
 	const [AOA, setAOA] = useState(JSON.parse(localStorage.getItem("AOA")) || []);
 	// eslint-disable-next-line
-	const [AOAInfo, setAOAInfo] = useState(JSON.parse(localStorage.getItem("AOAInfo")) || []);
-	// eslint-disable-next-line
 	const [allCombis, setAllCombis] = useState(JSON.parse(localStorage.getItem("allCombis")) || []);
-	// eslint-disable-next-line
-	const [allCombisInfo, setAllCombisInfo] = useState(JSON.parse(localStorage.getItem("allCombisInfo")) || []);
+	const [generated, setGenerated] = useState(localStorage.getItem('generated') || 'false');
 
 	useEffect(() => {
 		localStorage.setItem('theme', theme);
@@ -44,14 +42,8 @@ function App() {
 			.catch((err) => console.error("Error: ", err));
 	}
 
-	// setting up available courses
-	localStorage.setItem("term1", JSON.stringify(courses.filter(course => course.term === "1")));
-	localStorage.setItem("term2", JSON.stringify(courses.filter(course => course.term === "2")));
-	localStorage.setItem("term3", JSON.stringify(courses.filter(course => course.term === "3")));
-	localStorage.setItem("term4", JSON.stringify(courses.filter(course => course.term === "4")));
-
 	// TO ADD ONE SPECIFIC COURSE TO THE ARRAY 'SELECTEDCOURSES' PROVIDED IT IS NOT ALREADY ADDED
-    const addCourse = async course => {
+    const addCourse = course => {
 		const obj = JSON.parse(course); // obj is course to be added
 		if (!(selectedCourses.some(object => (object._id === obj._id)))) {
 			var existing = selectedCourses; // array of selected courses
@@ -65,14 +57,14 @@ function App() {
     }
 
 	// TO DELETE ONE SPECIFIC COURSE FROM THE ARRAY 'SELECTEDCOURSES'
-	const deleteCourse = async id => {
+	const deleteCourse = id => {
 		var existing = selectedCourses; // array of selected courses
 		const newArray = existing.filter(course => course._id !== id);
 		localStorage.setItem("selected", JSON.stringify(newArray));
 		setSelectedCourses(newArray);
 	}
 
-	const resetPage = async () => {
+	const resetPage = () => {
 		saveTerm("0");
 		localStorage.setItem("selected", JSON.stringify([]));
 		setSelectedCourses([]);
@@ -80,12 +72,10 @@ function App() {
 		setAOA([]);
 		localStorage.setItem("allCombis", JSON.stringify([]));
 		setAllCombis([]);
-		localStorage.setItem("AOAInfo", JSON.stringify([]));
-		setAOAInfo([]);
-		localStorage.setItem("allCombisInfo", JSON.stringify([]));
-		setAllCombisInfo([]);
 		localStorage.setItem("filteredCourses", JSON.stringify([]));
 		setFilteredCourses([]);
+		localStorage.setItem("generated", 'false');
+		setGenerated('false');
 	}
 
 	const saveTerm = term => {
@@ -99,7 +89,7 @@ function App() {
 
 	const GetAvailCourses = () => {
 		if (isTermChosen()) {
-			return JSON.parse(localStorage.getItem("term" + term));
+			return courses.filter(course => course.term === term);
 		} else {
 			return [];
 		}
@@ -109,10 +99,6 @@ function App() {
 		return JSON.parse(localStorage.getItem("AOA"));
 	}
 
-	const GetAOAInfo = () => {
-		return JSON.parse(localStorage.getItem("AOAInfo"));
-	}
-
 	const editArrOfArrs = arr => {
 		var existing = GetAOA();
 		existing.push(arr);
@@ -120,66 +106,35 @@ function App() {
 		setAOA(existing);
 	}
 
-	const editArrOfArrsInfo = (code, type) => {
-		var existing = GetAOAInfo();
-		var currInfo = { code: code, type: type };
-		existing.push(currInfo);
-		localStorage.setItem("AOAInfo", JSON.stringify(existing));
-		setAOAInfo(existing);
-	}
-
 	const GetAllCombis = () => {
 		return JSON.parse(localStorage.getItem("allCombis"));
 	}
 
-	const GetAllCombisInfo = () => {
-		return JSON.parse(localStorage.getItem("allCombisInfo"));
-	}
-
-	const generateSchedules = async () => {
+	const generateSchedules = () => {
 		const arr = GetCourses();
 		arr.forEach(c => extractSlots(c));
+
 		var existing = combineArrays(GetAOA());
+		localStorage.setItem("AOA", JSON.stringify([]));
+		setAOA([]);
 		localStorage.setItem("allCombis", JSON.stringify(existing));
 		setAllCombis(existing);
-		checkForRepeats();
-		checkForTimeOverlap();
+		setGenerated('true');
+		localStorage.setItem("generated", 'true');
 	}
 
-	const expandAllCombisInfo = () => {
-		var existing = GetAllCombisInfo();
-		existing.push([]);
-		localStorage.setItem("allCombisInfo", JSON.stringify(existing));
-		setAllCombisInfo(existing);
-	}
-
-	const editAllCombisInfo = obj => {
-		const currLength = GetAllCombisInfo().length;
-		const currCombi = GetAllCombisInfo()[currLength - 1];
-		const currArray = GetAllCombisInfo();
-		currCombi.push(obj);
-		currArray.pop();
-		currArray.push(currCombi);
-		localStorage.setItem("allCombisInfo", JSON.stringify(currArray));
-		setAllCombisInfo(currArray);
-	}
-
-	const extractSlots = course => { // method that builds the "AOA" and "AOAInfo"
+	const extractSlots = course => { // method that builds the "AOA"
 		if (course.lec.length !== 0) {
 			editArrOfArrs(course.lec);
-			editArrOfArrsInfo(course.code, "Lec");
 		}
 		if (course.tut.length !== 0) {
 			editArrOfArrs(course.tut);
-			editArrOfArrsInfo(course.code, "Tut");
 		}
 		if (course.rec.length !== 0) {
 			editArrOfArrs(course.rec);
-			editArrOfArrsInfo(course.code, "Rec");
 		}
 		if (course.lab.length !== 0) {
 			editArrOfArrs(course.lab);
-			editArrOfArrsInfo(course.code, "Lab");
 		}
 	}
 
@@ -189,39 +144,30 @@ function App() {
     	odometer.fill(0); 
 		let output = [];
 
-		expandAllCombisInfo();
     	let newCombination = formCombination( odometer, array_of_arrays );
 
     	output.push( newCombination );
 
 		while (odometer_increment(odometer, array_of_arrays)) {
-			expandAllCombisInfo();
 			newCombination = formCombination( odometer, array_of_arrays );
 			output.push( newCombination );
 		}
 
-		return output;
+		return checkForTimeOverlap(checkForRepeats(output));
 	}
 
-	const checkForRepeats = async () => {
-		var existing = GetAllCombis().filter(combi => combi.length > 0);
-		var existingInfo = GetAllCombisInfo().filter(combi => combi.length > 0);
+	const checkForRepeats = data => {
+		var existing = data;
 
 		for (let i = 0; i < existing.length - 1; i++) {
 			for (let j = i + 1; j < existing.length; j++) {
 				if (compareArr(existing[i], existing[j])) {
 					existing.splice(i, 1, []);
-					localStorage.setItem("allCombis", JSON.stringify(existing));
-					setAllCombis(existing);
-					
-					existingInfo.splice(i, 1, []);
-					localStorage.setItem("allCombisInfo", JSON.stringify(existingInfo));
-					setAllCombisInfo(existingInfo);
-
 					break;
 				}
 			}
 		}
+		return existing.filter(combi => combi.length > 0);
 	}
 
 	const compareArr = (arr1, arr2) => {
@@ -252,21 +198,15 @@ function App() {
 		return true;
 	}
 
-	const checkForTimeOverlap = async () => {
-		var existing = GetAllCombis().filter(combi => combi.length > 0);
-		var existingInfo = GetAllCombisInfo().filter(combi => combi.length > 0);
+	const checkForTimeOverlap = data => {
+		var existing = data;
 
 		for (let i = 0; i < existing.length; i++) {
 			if (compareSlots(existing[i])) {
 				existing.splice(i, 1, []);
-				localStorage.setItem("allCombis", JSON.stringify(existing));
-				setAllCombis(existing);
-						
-				existingInfo.splice(i, 1, []);
-				localStorage.setItem("allCombisInfo", JSON.stringify(existingInfo));
-				setAllCombisInfo(existingInfo);
 			}
 		}
+		return existing.filter(combi => combi.length > 0);
 	}
 
 	const compareSlots = combi => {
@@ -314,12 +254,9 @@ function App() {
 						const bundledObjId = currSlot.bundled[i];
 						const bundledObj = currArr.find(element => element.slot_id === bundledObjId);
 						accumulator.push(bundledObj);
-						editAllCombisInfo(GetAOAInfo()[odometer_index]);
-
 					}					
 				}
 				accumulator.push(currSlot);
-				editAllCombisInfo(GetAOAInfo()[odometer_index]);
 				return accumulator;
 			},
 			[]			
@@ -369,33 +306,35 @@ function App() {
   return (
     <div className="App">
 			<h1>Welcome to the Schedule Generator!</h1>
-			{ selectedCourses.length === 0 && <h2>Start by selecting a semester below</h2> }
-			{ selectedCourses.length > 0 && 
+			{ selectedCourses.length === 0 && generated === "false" && <h2>Start by selecting a semester below</h2> }
+			{ selectedCourses.length > 0 && generated === "false" &&
 				( (selectedCourses[0].term === "1" && <h4>Your Semester 1 Courses</h4>) ||
 				(selectedCourses[0].term === "2" && <h4>Your Semester 2 Courses</h4>) ||
 				(selectedCourses[0].term === "3" && <h4>Your Special Term I Courses</h4>) ||
 				(selectedCourses[0].term === "4" && <h4>Your Special Term II Courses</h4>) ) }
+			{ generated === "true" && <h4>Your Combinations</h4> }
 			<button className="resetButton" onClick={resetPage}>Reset</button>
 			<div className="courses">
-				{(selectedCourses.length > 0 && GetAllCombis().length === 0)
-					? selectedCourses.map(course => (
+				{selectedCourses.length > 0 && generated === "false" && selectedCourses.map(course => (
 						<div className={"course"} key={course._id}>
 
 							<div className="text">{course.code} {course.name}</div>
 
 							<div className="delete-course" onClick={() => deleteCourse(course._id)}>X</div>
 						</div>
-				)) : (
-					<p></p>
-				)}
+				))}
             </div>
 			<div className={`App ${theme}`}>
 				<input type="checkbox" id="darkmode-toggle" className="darkmode-input" onClick={toggleTheme}/>
 				<label for="darkmode-toggle">
 					<svg class="sun" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<g id="Environment / Sun">
-						<path id="Vector" d="M12 4V2M12 20V22M6.41421 6.41421L5 5M17.728 17.728L19.1422 19.1422M4 12H2M20 12H22M17.7285 6.41421L19.1427 5M6.4147 17.728L5.00049 19.1422M12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17Z" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+						<path id="Vector" d="M12 4V2M12 20V22M6.41421 6.41421L5 5M17.728 17.728L19.1422 19.1422M4 12H2M20 12H22M17.7285 6.41421L19.1427 5M6.4147 17.728L5.00049 19.1422M12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17Z" stroke="#202B3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</g>
+					</svg>
+					<svg class="moon" width="800px" height="800px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+						<path class="crescent" d="M895.573333 652.096a21.504 21.504 0 0 0-20.693333-5.504A406.186667 406.186667 0 0 1 768 661.333333c-223.509333 0-405.333333-181.824-405.333333-405.333333 0-35.136 4.949333-71.104 14.741333-106.88a21.333333 21.333333 0 0 0-26.197333-26.218667C156.970667 175.957333 21.333333 353.514667 21.333333 554.666667c0 247.04 200.96 448 448 448 201.173333 0 378.709333-135.637333 431.744-329.856a21.333333 21.333333 0 0 0-5.504-20.714667z" fill="none" />
+						<path class="stars" d="M725.333333 106.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666zM981.333333 362.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666z" fill="none" />
 					</svg>
 				</label>
 			</div>
@@ -424,7 +363,7 @@ function App() {
 			</div>
 
 			<div>
-			{isTermChosen() && sempopupActive === false && GetAllCombis().length === 0 &&
+			{isTermChosen() && sempopupActive === false && generated === "false" &&
 				<div className="addPopup" onClick={() => setPopupActive(true)}>+</div>
 			}
 
@@ -448,13 +387,13 @@ function App() {
 				) : ''}
 			</div>
 			<div>
-				{ selectedCourses.length > 0 && GetAllCombis().length === 0 &&
+				{ selectedCourses.length > 0 && generated === "false" &&
 					<button className="generateButton" onClick={generateSchedules}>Start Generating!</button>
 				}
 			</div>
 			<div className="combis">
-				{GetAllCombis().length > 0 
-					? GetAllCombis().filter(combi => combi.length > 0).map((combi, index) => (
+				{generated === "true" 
+					? GetAllCombis().map((combi, index) => (
 							<div className="combi">
 								<button onClick={printCombi(index)} className="print-combi">Download</button>
 									<table>
@@ -462,7 +401,7 @@ function App() {
 										{ combi.map((slot, id) => (
 										<div className="slotInfo">
 											<tr>
-												<td>{GetAllCombisInfo().filter(combi => combi.length > 0)[index][id].code} {GetAllCombisInfo().filter(combi => combi.length > 0)[index][id].type} {slot.slot_name}:</td>
+												<td>{slot.slot_name}:</td>
 												<td>{slot.day} from {slot.startTime} to {slot.endTime}</td>
 											</tr>
 										</div>
