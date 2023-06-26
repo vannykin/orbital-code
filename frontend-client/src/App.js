@@ -157,20 +157,16 @@ function App() {
 	}
 
 	const checkForRepeats = data => {
-		var existing = data;
-
-		for (let i = 0; i < existing.length - 1; i++) {
-			for (let j = i + 1; j < existing.length; j++) {
-				if (compareArr(existing[i], existing[j])) {
-					existing.splice(i, 1, []);
-					break;
-				}
+		return data.map((combi, index) => {
+			if (index < data.length - 1) {
+				return data.slice(index + 1).some(curr => compareArr(combi, curr)) ? [] : combi;
+			} else {
+				return combi;
 			}
-		}
-		return existing.filter(combi => combi.length > 0);
+		}).filter(combi => combi.length > 0);
 	}
 
-	const compareArr = (arr1, arr2) => {
+	const compareArr = (arr1, arr2) => { // comparing 2 combinations, returns true if combis are identical
 		const copy1 = arr1.concat();
 		const copy2 = arr2.concat();
 		copy1.sort((s1, s2) => { 
@@ -189,57 +185,32 @@ function App() {
 			} else { return 0; 
 			}
 		});
-		for (let i = 0; i < copy1.length; i++) {
-			if (copy1[i].slot_id !== copy2[i].slot_id) {
-				return false;
-			}
-			continue;
-		}
-		return true;
+		return !(copy1.some((element, index) => element.slot_id !== copy2[index].slot_id));
 	}
 
 	const checkForTimeOverlap = data => {
-		var existing = data;
-
-		for (let i = 0; i < existing.length; i++) {
-			if (compareSlots(existing[i])) {
-				existing.splice(i, 1, []);
-			}
-		}
-		return existing.filter(combi => combi.length > 0);
+		return data.map(combi => {
+			return compareSlots(combi) ? [] : combi;
+		}).filter(combi => combi.length > 0);
 	}
 
-	const compareSlots = combi => {
-		for (let j = 0; j < combi.length - 1; j++) {
-			for (let k = j + 1; k < combi.length; k++) {
-				if (combi[j].day === combi[k].day &&
-					((combi[k].startTime < combi[j].endTime && combi[j].startTime <= combi[k].startTime) || 
-					(combi[j].startTime < combi[k].endTime && combi[k].startTime <= combi[j].startTime))) {
-					if (compareFrequency(combi[j], combi[k])) { // return true if frequency overlap at all
-						return true;
-					}
-				}
-				continue;
-			}
-		}
-		return false;
+	const compareSlots = combi => { 
+	// returns true if any frequency overlaps at all (so combi should be eliminated)
+		return combi.some((slot, index) =>
+  			(index < combi.length - 1) && combi.slice(index + 1).some(curr =>
+				(curr.day === slot.day) &&
+					((curr.startTime < slot.endTime && curr.endTime > slot.startTime) || 
+					(slot.startTime < curr.endTime && slot.endTime > curr.startTime)) &&
+					(compareFrequency(slot, curr))
+			)
+		);
 	}
 
 	const compareFrequency = (s1, s2) => {
 		if (s1.frequency.length <= s2.frequency.length) {
-			for (let i = 0; i < s1.frequency.length; i++ ) {
-				if (s2.frequency.includes(s1.frequency[i])) {
-					return true;
-				}
-			}
-			return false;
+			return s1.frequency.some(hz => s2.frequency.includes(hz));
 		} else {
-			for (let i = 0; i < s2.frequency.length; i++ ) {
-				if (s1.frequency.includes(s2.frequency[i])) {
-					return true;
-				}
-			}
-			return false;
+			return s2.frequency.some(hz => s1.frequency.includes(hz));
 		}
 	}
 
@@ -326,15 +297,15 @@ function App() {
             </div>
 			<div className={`App ${theme}`}>
 				<input type="checkbox" id="darkmode-toggle" className="darkmode-input" onClick={toggleTheme}/>
-				<label for="darkmode-toggle">
-					<svg class="sun" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<label htmlFor="darkmode-toggle">
+					<svg className="sun" width="800px" height="800px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<g id="Environment / Sun">
-						<path id="Vector" d="M12 4V2M12 20V22M6.41421 6.41421L5 5M17.728 17.728L19.1422 19.1422M4 12H2M20 12H22M17.7285 6.41421L19.1427 5M6.4147 17.728L5.00049 19.1422M12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17Z" stroke="#202B3E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+						<path id="Vector" d="M12 4V2M12 20V22M6.41421 6.41421L5 5M17.728 17.728L19.1422 19.1422M4 12H2M20 12H22M17.7285 6.41421L19.1427 5M6.4147 17.728L5.00049 19.1422M12 17C9.23858 17 7 14.7614 7 12C7 9.23858 9.23858 7 12 7C14.7614 7 17 9.23858 17 12C17 14.7614 14.7614 17 12 17Z" stroke="#202B3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
 					</g>
 					</svg>
-					<svg class="moon" width="800px" height="800px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-						<path class="crescent" d="M895.573333 652.096a21.504 21.504 0 0 0-20.693333-5.504A406.186667 406.186667 0 0 1 768 661.333333c-223.509333 0-405.333333-181.824-405.333333-405.333333 0-35.136 4.949333-71.104 14.741333-106.88a21.333333 21.333333 0 0 0-26.197333-26.218667C156.970667 175.957333 21.333333 353.514667 21.333333 554.666667c0 247.04 200.96 448 448 448 201.173333 0 378.709333-135.637333 431.744-329.856a21.333333 21.333333 0 0 0-5.504-20.714667z" fill="none" />
-						<path class="stars" d="M725.333333 106.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666zM981.333333 362.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666z" fill="none" />
+					<svg className="moon" width="800px" height="800px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+						<path className="crescent" d="M895.573333 652.096a21.504 21.504 0 0 0-20.693333-5.504A406.186667 406.186667 0 0 1 768 661.333333c-223.509333 0-405.333333-181.824-405.333333-405.333333 0-35.136 4.949333-71.104 14.741333-106.88a21.333333 21.333333 0 0 0-26.197333-26.218667C156.970667 175.957333 21.333333 353.514667 21.333333 554.666667c0 247.04 200.96 448 448 448 201.173333 0 378.709333-135.637333 431.744-329.856a21.333333 21.333333 0 0 0-5.504-20.714667z" fill="none" />
+						<path className="stars" d="M725.333333 106.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666zM981.333333 362.666667c-35.285333 0-64-28.714667-64-64a21.333333 21.333333 0 1 0-42.666666 0c0 35.285333-28.714667 64-64 64a21.333333 21.333333 0 1 0 0 42.666666c35.285333 0 64 28.714667 64 64a21.333333 21.333333 0 1 0 42.666666 0c0-35.285333 28.714667-64 64-64a21.333333 21.333333 0 1 0 0-42.666666z" fill="none" />
 					</svg>
 				</label>
 			</div>
