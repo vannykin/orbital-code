@@ -144,65 +144,27 @@ function App() {
     	odometer.fill(0); 
 		let output = [];
 
+		// const noOfCombis = array_of_arrays.reduce((acc, curr) => acc * curr.length, 1);
+
     	let newCombination = formCombination( odometer, array_of_arrays );
 
-    	output.push( newCombination );
+    	if (newCombination.length > 0) { output.push( newCombination ); }
 
-		while (odometer_increment(odometer, array_of_arrays)) {
+		while (odometer_increment(odometer, array_of_arrays) && output.length < 30) { // or < limit (chosen by user)
 			newCombination = formCombination( odometer, array_of_arrays );
-			output.push( newCombination );
+			if (newCombination.length > 0) { output.push( newCombination ); }
 		}
 
-		return checkForTimeOverlap(checkForRepeats(output));
+		return output;
 	}
 
-	const checkForRepeats = data => {
-		return data.map((combi, index) => {
-			if (index < data.length - 1) {
-				return data.slice(index + 1).some(curr => compareArr(combi, curr)) ? [] : combi;
-			} else {
-				return combi;
-			}
-		}).filter(combi => combi.length > 0);
-	}
-
-	const compareArr = (arr1, arr2) => { // comparing 2 combinations, returns true if combis are identical
-		const copy1 = arr1.concat();
-		const copy2 = arr2.concat();
-		copy1.sort((s1, s2) => { 
-			if (s1.slot_id < s2.slot_id) { 
-				return -1; 
-			} else if (s1.slot_id > s2.slot_id) { 
-				return 1; 
-			} else { return 0; 
-			}
-		});
-		copy2.sort((s1, s2) => { 
-			if (s1.slot_id < s2.slot_id) { 
-				return -1; 
-			} else if (s1.slot_id > s2.slot_id) { 
-				return 1; 
-			} else { return 0; 
-			}
-		});
-		return !(copy1.some((element, index) => element.slot_id !== copy2[index].slot_id));
-	}
-
-	const checkForTimeOverlap = data => {
-		return data.map(combi => {
-			return compareSlots(combi) ? [] : combi;
-		}).filter(combi => combi.length > 0);
-	}
-
-	const compareSlots = combi => { 
+	const compareSlots = (combi, newSlot) => { 
 	// returns true if any frequency overlaps at all (so combi should be eliminated)
-		return combi.some((slot, index) =>
-  			(index < combi.length - 1) && combi.slice(index + 1).some(curr =>
-				(curr.day === slot.day) &&
-					((curr.startTime < slot.endTime && curr.endTime > slot.startTime) || 
-					(slot.startTime < curr.endTime && slot.endTime > curr.startTime)) &&
-					(compareFrequency(slot, curr))
-			)
+		return combi.some(slot =>
+				(newSlot.day === slot.day) &&
+					((newSlot.startTime < slot.endTime && newSlot.endTime > slot.startTime) || 
+					(slot.startTime < newSlot.endTime && slot.endTime > newSlot.startTime)) &&
+					(compareFrequency(slot, newSlot))
 		);
 	}
 
@@ -218,17 +180,32 @@ function App() {
 	const formCombination = (odometer, array_of_arrays) => {
 		return odometer.reduce(
 			function(accumulator, odometer_value, odometer_index) {
-				const currSlot = array_of_arrays[odometer_index][odometer_value];
-				const currArr = array_of_arrays[odometer_index];
-				if (currSlot.bundled !== undefined) {
-					for ( let i = 0; i < currSlot.bundled.length; i++ ) {
-						const bundledObjId = currSlot.bundled[i];
-						const bundledObj = currArr.find(element => element.slot_id === bundledObjId);
-						accumulator.push(bundledObj);
-					}					
+				if (odometer_index > 0 && accumulator.length === 0) { return []; } // been cleared before
+				else if (odometer_index === 0 || !compareSlots(accumulator, array_of_arrays[odometer_index][odometer_value])) {
+					const currSlot = array_of_arrays[odometer_index][odometer_value];
+					accumulator.push(currSlot);
+
+					if (currSlot.bundled !== undefined) {
+						if (array_of_arrays[odometer_index].findIndex(e => e.slot_id === currSlot.bundled[0]) > odometer_value) {
+							for ( let i = 0; i < currSlot.bundled.length; i++ ) { // adding all bundled objects to combi
+								const bundledObjId = currSlot.bundled[i];
+								const bundledObj = array_of_arrays[odometer_index].find(element => element.slot_id === bundledObjId);
+								if (compareSlots(accumulator, bundledObj)) { // returns true means return []
+									accumulator = [];
+									break;
+								} else {
+									accumulator.push(bundledObj);
+								}
+							}
+						} else {
+							accumulator = [];
+						}					
+					}
+
+					return accumulator;
+				} else {
+					return [];
 				}
-				accumulator.push(currSlot);
-				return accumulator;
 			},
 			[]			
 		);
