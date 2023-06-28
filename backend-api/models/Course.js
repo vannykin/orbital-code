@@ -34,6 +34,10 @@ const CourseSchema = new Schema({
     lab: {
         type: Array,
         required: false
+    },
+    sec: {
+        type: Array,
+        required: false
     }
 });
 

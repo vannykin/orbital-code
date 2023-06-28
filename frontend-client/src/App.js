@@ -136,6 +136,9 @@ function App() {
 		if (course.lab.length !== 0) {
 			editArrOfArrs(course.lab);
 		}
+		if (course.sec.length !== 0) {
+			editArrOfArrs(course.sec);
+		}
 	}
 
 	const combineArrays = array_of_arrays => {
@@ -349,7 +352,7 @@ function App() {
 										{ combi.map((slot, id) => (
 										<div className="slotInfo">
 											<tr>
-												<td>{slot.slot_name}:</td>
+												<td>{slot.CAT} {slot.slot_name}:</td>
 												<td>{slot.day} from {slot.startTime} to {slot.endTime}</td>
 											</tr>
 										</div>
