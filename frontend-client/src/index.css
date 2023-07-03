@@ -41,7 +41,7 @@ label svg {
 }
 
 label svg.sun {
-	right:150px;
+	right:472px;
 	top:-345px;
 	fill:#ffe32f;
 }
@@ -51,7 +51,7 @@ label svg.sun {
 }
 
 label svg.moon {
-	right:150px;
+	right:472px;
 	top:-345px;
 	fill: #fef9ef;
 }
@@ -140,6 +140,42 @@ h4 {
 	font-weight: 700;
 }
 
+.breaks, .fixedslots {
+	position: relative;
+	background-color: var(--dark);
+	padding: 16px;
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	transition: 0.5s;
+	cursor: pointer;
+	margin-bottom: 16px;
+}
+
+.breaks:hover {
+	opacity: 0.8;
+}
+
+.breaks .period, .fixedslots .slot {
+	font-size: 20px;
+}
+
+.breaks .delete-period, .fixedslots .delete-fixed-slot {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	right: 16px;
+	color: var(--light);
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background-color: var(--delete);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+}
+
 .addPopup {
 	position: fixed;
 	bottom: 32px;
@@ -159,7 +195,7 @@ h4 {
 	cursor: pointer;
 }
 
-.SemButton {
+.SemButton, .generateButton, .filterButton {
 	position: fixed;
 	bottom: 32px;
 	left: 32px;
@@ -167,11 +203,11 @@ h4 {
 	align-items: center;
 	justify-content: center;
 
-	width: 256px;
-	height: 64px;
+	width: 230px;
+	height: 56px;
 	border-radius: 999px;
 	font-size: 20px;
-	font-weight: 900;
+	font-weight: 600;
 	color: var(--light);
 	background-color: var(--primary);
 	background-image: linear-gradient(to bottom right, var(--primary), var(--secondary));
@@ -179,27 +215,26 @@ h4 {
 	border: white;
 }
 
-.generateButton {
+.limit {
 	position: fixed;
 	bottom: 32px;
-	left: 32px;
+	left: 278px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 
-	width: 256px;
-	height: 64px;
+	width: 156px;
+	height: 56px;
 	border-radius: 999px;
 	font-size: 20px;
-	font-weight: 900;
+	font-weight: 600;
 	color: var(--light);
 	background-color: var(--primary);
 	background-image: linear-gradient(to bottom right, var(--primary), var(--secondary));
 	cursor: pointer;
-	border: white;
 }
 
-.popup {
+.limitpopup, .filterPopup, .popup, .sempopup, .LecSecPopup {
 	position: fixed;
 	top: 50%;
 	left: 50%;
@@ -213,32 +248,7 @@ h4 {
 	box-shadow: 0px 4px 32px var(--dark);
 }
 
-.sempopup {
-	position: fixed;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-
-	width: 100%;
-	max-width: 400px;
-	background-color: var(--light);
-	padding: 32px;
-	border-radius: 16px;
-	box-shadow: 0px 4px 32px var(--dark);
-}
-
-.closePopup {
-	position: absolute;
-	top: 16px;
-	right: 16px;
-	width: 20px;
-	height: 20px;
-	font-size: 20px;
-	color: var(--dark);
-	cursor: pointer;
-}
-
-.closeSemPopup {
+.closePopup, .closeSemPopup, .closeLimitPopup, .closeLecSecPopup, .closeFilterPopup {
 	position: absolute;
 	top: 16px;
 	right: 16px;
@@ -256,7 +266,28 @@ h4 {
 	text-transform: uppercase;
 }
 
-.add-course-input {
+.limitpopup h3, .filterPopup h3, .LecSecPopup h3 {
+	color: var(--dark);
+	margin-bottom: 16px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
+.limitpopup h4, .filterPopup h4, .LecSecPopup h4 {
+	color: var(--dark);
+	margin-bottom: 14px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
+.limitpopup h5, .filterPopup h5 {
+	color: var(--dark);
+	margin-bottom: 12px;
+	font-weight: 400;
+	text-transform: uppercase;
+}
+
+.add-course-input, .choose-semester-input, .select-limit, .choose-beginning-input, .choose-ending-input, .choose-breaks-input, .add-lec-sec-slot, .choose-off-day {
 	appearance: none;
 	outline: none;
 	border: none;
@@ -283,24 +314,12 @@ h4 {
 	cursor: pointer;
 }
 
-.choose-semester-input {
-	appearance: none;
-	outline: none;
-	border: none;
-	background-color: #FFF;
-	padding: 16px;
-	border-radius: 16px;
-	width: 100%;
-	box-shadow: 0px 2px 24px rgba(0, 0, 0, 0.2);
-	font-size: 20px;
-}
-
-.button {
+.button, .semButton, .GenerateButton, .MoreFixedSlots {
 	padding: 16px 32px;
 	border-radius: 999px;
 	background-image: linear-gradient(to right, var(--primary), var(--secondary));
 	display: inline-block;
-	font-weight: 700;
+	font-weight: 600;
 	text-transform: uppercase;
 	font-size: 18px;
 	margin-top: 16px;
@@ -309,21 +328,7 @@ h4 {
 	border: white;
 }
 
-.semButton {
-	padding: 16px 32px;
-	border-radius: 999px;
-	background-image: linear-gradient(to right, var(--primary), var(--secondary));
-	display: inline-block;
-	font-weight: 700;
-	text-transform: uppercase;
-	font-size: 18px;
-	margin-top: 16px;
-	text-align: center;
-	cursor: pointer;
-	border: white;
-}
-
-.resetButton {
+.resetEverythingButton {
 	position: absolute;
 	top: 32px;
 	right: 32px;
@@ -331,11 +336,31 @@ h4 {
 	align-items: center;
 	justify-content: center;
 
-	width: 96px;
+	width: 196px;
 	height: 48px;
 	border-radius: 999px;
 	font-size: 20px;
-	font-weight: 900;
+	font-weight: 600;
+	color: var(--light);
+	background-color: var(--primary);
+	background-image: linear-gradient(to bottom right, var(--primary), var(--secondary));
+	cursor: pointer;
+	border: white;
+}
+
+.resetButton {
+	position: absolute;
+	top: 32px;
+	right: 244px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	width: 212px;
+	height: 48px;
+	border-radius: 999px;
+	font-size: 20px;
+	font-weight: 600;
 	color: var(--light);
 	background-color: var(--primary);
 	background-image: linear-gradient(to bottom right, var(--primary), var(--secondary));

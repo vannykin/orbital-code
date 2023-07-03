@@ -7,17 +7,29 @@ function App() {
 
 	const [popupActive, setPopupActive] = useState(false);
 	const [sempopupActive, setSemPopupActive] = useState(false);
-
+	const [limitpopupActive, setLimitPopupActive] = useState(false);
+	const [filterPopupActive, setFilterPopupActive] = useState(false);
+	const [lecSecPopupActive, setLecSecPopupActive] = useState(false);
+	const [moreFixedSlotsPopupActive, setMoreFixedSlotsPopupActive] = useState(false);
 	const [courses, setCourses] = useState([]);
 
-	const [selectedCourses, setSelectedCourses] = useState(JSON.parse(localStorage.getItem("selected")) || []);
-	const [term, setTerm] = useState(localStorage.getItem("term") || "0");
-	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
 	// eslint-disable-next-line
 	const [AOA, setAOA] = useState(JSON.parse(localStorage.getItem("AOA")) || []);
 	// eslint-disable-next-line
 	const [allCombis, setAllCombis] = useState(JSON.parse(localStorage.getItem("allCombis")) || []);
+	// eslint-disable-next-line
+	const [breaks, setBreaks] = useState(JSON.parse(localStorage.getItem("breaks")) || []);
+	// eslint-disable-next-line
+	const [fixedSlots, setFixedSlots] = useState(JSON.parse(localStorage.getItem("fixedSlots")) || []);
+	// eslint-disable-next-line
+	const [offDay, setOffDay] = useState(localStorage.getItem('offDay') || "");
+	const [selectedCourses, setSelectedCourses] = useState(JSON.parse(localStorage.getItem("selected")) || []);
+	const [term, setTerm] = useState(localStorage.getItem("term") || "0");
+	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
 	const [generated, setGenerated] = useState(localStorage.getItem('generated') || 'false');
+	const [limit, setLimit] = useState(localStorage.getItem('limit') || "10");
+	const [beginning, setBeginning] = useState(localStorage.getItem("beginning")||"800");
+	const [ending, setEnding] = useState(localStorage.getItem("ending")||"2200");
 
 	useEffect(() => {
 		localStorage.setItem('theme', theme);
@@ -28,6 +40,7 @@ function App() {
 	useEffect(() => {
 		GetCourses();
 		fetchCourses();
+		toggleTheme();
 	}, []);
 
 	const GetCourses = () => {
@@ -64,6 +77,61 @@ function App() {
 		setSelectedCourses(newArray);
 	}
 
+	const saveBreak = obj => { // obj looks something like this: "Monday1000"
+		if (obj === "") {}
+		else {
+			var existing = GetBreaks();
+			if (!(existing.some(object => (object.id === obj)))) {
+				var day = obj.split("day")[0] + "day";
+				var time = obj.split("day")[1];
+				var newBreak = { id: obj, day: day, startBreak: time, endBreak: Number(time) + 100 };
+				existing.push(newBreak);
+				localStorage.setItem("breaks", JSON.stringify(existing));
+				setBreaks(existing);
+			}
+		}
+	}
+
+	const saveOffDay = day => {
+		localStorage.setItem("offDay", day);
+		setOffDay(day);
+	}
+
+	const deletePeriod = id => {
+		var existing = GetBreaks(); 
+		const newArray = existing.filter(period => period.id !== id);
+		localStorage.setItem("breaks", JSON.stringify(newArray));
+		setBreaks(newArray);
+	}
+
+	const blockBreaks = combi => {
+		const currBreaks = GetBreaks();
+		return !combi.some(slot => currBreaks.some(period => slot.day === period.day && 
+			((slot.startTime >= period.startBreak && slot.startTime < period.endBreak) || 
+			(slot.endTime <= period.endBreak && slot.endTime > period.startBreak))));
+	}
+
+	const addFixedSlot = (CATName, slotName) => {
+		var existing = GetFixedSlots(); // slots that are already added
+		var currCourse = GetAOA().filter(arr => arr[0].CAT === CATName)[0]; // array like CS2030S Lectures, IS1108 Sectionals
+		existing.filter(object => (object.CAT !== CATName)); // delete previously-added slots of the same CAT
+		// eslint-disable-next-line
+		currCourse.map(slot => { if (slot.slot_name === slotName) { existing.push(slot); } }); // add all slots with slotName
+		localStorage.setItem("fixedSlots", JSON.stringify(existing));
+		setFixedSlots(existing);
+	}
+
+	const findFreeDays = () => {
+		var existing = GetFixedSlots().map(slot => slot.day);
+		var result = [];
+		if (!existing.includes("Monday")) { result.push("Monday"); }
+		if (!existing.includes("Tuesday")) { result.push("Tuesday"); }
+		if (!existing.includes("Wednesday")) { result.push("Wednesday"); }
+		if (!existing.includes("Thursday")) { result.push("Thursday"); }
+		if (!existing.includes("Friday")) { result.push("Friday"); }
+		return result;
+	}
+
 	const resetPage = () => {
 		saveTerm("0");
 		localStorage.setItem("selected", JSON.stringify([]));
@@ -76,11 +144,98 @@ function App() {
 		setFilteredCourses([]);
 		localStorage.setItem("generated", 'false');
 		setGenerated('false');
+		localStorage.setItem("limit", '10');
+		setLimit("10");
+		saveBeginning("800");
+		saveEnding("2200");
+		localStorage.setItem("breaks", JSON.stringify([]));
+		setBreaks([]);
+		localStorage.setItem("fixedSlots", JSON.stringify([]));
+		setFixedSlots([]);
+		localStorage.setItem("offDay", "");
+		setOffDay("");
+	}
+
+	const resetButKeepCourses = () => {
+		localStorage.setItem("AOA", JSON.stringify([]));
+		setAOA([]);
+		localStorage.setItem("allCombis", JSON.stringify([]));
+		setAllCombis([]);
+		localStorage.setItem("filteredCourses", JSON.stringify([]));
+		setFilteredCourses([]);
+		localStorage.setItem("generated", 'false');
+		setGenerated('false');
+		localStorage.setItem("limit", '10');
+		setLimit("10");
+		saveBeginning(800);
+		saveEnding(2200);
+		localStorage.setItem("breaks", JSON.stringify([]));
+		setBreaks([]);
+		localStorage.setItem("fixedSlots", JSON.stringify([]));
+		setFixedSlots([]);
+		localStorage.setItem("offDay", "");
+		setOffDay("");
 	}
 
 	const saveTerm = term => {
 		localStorage.setItem("term", term);
 		setTerm(term);
+	}
+
+	const saveBeginning = beginning => {
+		localStorage.setItem("beginning", beginning);
+		setBeginning(beginning);
+	}
+
+	const saveEnding = ending => {
+		localStorage.setItem("ending", ending);
+		setEnding(ending);
+	}
+
+	const allBeginnings = () => {
+		var earliest = Math.round(GetFixedSlots().map(slot => slot.startTime).reduce((a, b) => Math.min(a, b), 2200) / 100) * 100;
+		var arr = [];
+		for (let i = 0; i < ((earliest - 800) / 100) + 1; i++) {
+			arr.push(earliest - i * 100);
+		}
+		return arr;
+	}
+
+	const allEndings = () => {
+		var latest = Math.ceil(GetFixedSlots().map(slot => slot.endTime).reduce((a, b) => Math.max(a, b), 800) / 100) * 100;
+		var arr = [];
+		for (let i = 0; i < ((2200 - latest) / 100) + 1; i++) {
+			arr.push(latest + i * 100);
+		}
+		return arr;
+	}
+
+	const allBreaks = () => {
+		var earliest = JSON.parse(localStorage.getItem("beginning")); // e.g. 1000
+		var latest = JSON.parse(localStorage.getItem("ending")); // e.g. 1800
+		var all = [];
+		for (let i = 0; i < (latest - earliest) / 100; i++) { // populate all with break slots from start to end time
+			all.push(Number(earliest) + (i * 100));
+		}
+		return [ "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" ].filter(day => day !== GetOffDay())
+			.map(day => all.reduce(
+				function (acc, value) {
+					const curr = { id: day + JSON.stringify(value), day: day, startTime: value, endTime: Number(value + 100) };
+					if (!helper(GetFixedSlots(), curr)) {
+						acc.push(curr);
+					}
+					return acc;
+				}
+			, []
+			)).flatMap(arr => arr);
+	}
+
+	const helper = (slots, newBreak) => { // return true means break clashes with some fixedSlot
+		return slots.some(slot =>
+			(newBreak.day === slot.day) &&
+				((newBreak.startTime < slot.endTime && newBreak.endTime > slot.startTime) || 
+				(slot.startTime < newBreak.endTime && slot.endTime > newBreak.startTime))
+		);
 	}
 
 	const isTermChosen = () => {
@@ -110,10 +265,19 @@ function App() {
 		return JSON.parse(localStorage.getItem("allCombis"));
 	}
 
-	const generateSchedules = () => {
-		const arr = GetCourses();
-		arr.forEach(c => extractSlots(c));
+	const GetBreaks = () => {
+		return JSON.parse(localStorage.getItem("breaks"));
+	}
 
+	const GetFixedSlots = () => {
+		return JSON.parse(localStorage.getItem("fixedSlots"));
+	}
+
+	const GetOffDay = () => {
+		return localStorage.getItem("offDay");
+	}
+
+	const generateSchedules = () => {
 		var existing = combineArrays(GetAOA());
 		localStorage.setItem("AOA", JSON.stringify([]));
 		setAOA([]);
@@ -123,39 +287,70 @@ function App() {
 		localStorage.setItem("generated", 'true');
 	}
 
-	const extractSlots = course => { // method that builds the "AOA"
-		if (course.lec.length !== 0) {
-			editArrOfArrs(course.lec);
+	const compareTime = (combi, currBeginning, currEnding) => {
+		return !combi.some(slot  => (slot.startTime < currBeginning || slot.endTime > currEnding));
+	}
+
+	const compareDay = slot => { // return true means no clash
+		if (GetOffDay().length === 0) { // no off day chosen, so slot will always be suitable
+			return true;
+		} else {
+			return slot.day !== GetOffDay();
 		}
-		if (course.tut.length !== 0) {
-			editArrOfArrs(course.tut);
-		}
-		if (course.rec.length !== 0) {
-			editArrOfArrs(course.rec);
-		}
-		if (course.lab.length !== 0) {
-			editArrOfArrs(course.lab);
-		}
-		if (course.sec.length !== 0) {
-			editArrOfArrs(course.sec);
-		}
+	}
+
+	const extractSlots = () => { // method that builds the "AOA"
+		// eslint-disable-next-line
+		GetCourses().map(course => {
+			if (course.lec.length !== 0) {
+				editArrOfArrs(course.lec);
+			}
+			if (course.sec.length !== 0) {
+				editArrOfArrs(course.sec);
+			}
+			if (course.tut.length !== 0) {
+				editArrOfArrs(course.tut);
+			}
+			if (course.rec.length !== 0) {
+				editArrOfArrs(course.rec);
+			}
+			if (course.lab.length !== 0) {
+				editArrOfArrs(course.lab);
+			}
+		});
+	}
+
+	const updateAOA = () => {
+		var existing = GetAOA();
+		var cats = [...new Map(GetFixedSlots().map((item) => [item["CAT"], item])).values()].map(slot => slot.CAT);
+		// looks like ["MA2101 lec", "MA2101 tut", "MA2108 lec", "GESS1037 sec"]
+		var newAOA = existing.filter(arr => !cats.includes(arr[0].CAT)); // only arrays where slot was not chosen is left in AOA
+		localStorage.setItem("AOA", JSON.stringify(newAOA));
+		setAOA(newAOA);
 	}
 
 	const combineArrays = array_of_arrays => {
 		// Start "odometer" with a 0 for each array in array_of_arrays
 		let odometer = new Array(array_of_arrays.length);
     	odometer.fill(0); 
+		let currBeginning = Number(beginning);
+		let currEnding = Number(ending);
+		// let currBreaks = GetBreaks();
 		let output = [];
 
-		// const noOfCombis = array_of_arrays.reduce((acc, curr) => acc * curr.length, 1);
+		let newCombination = formCombination( odometer, array_of_arrays );
 
-    	let newCombination = formCombination( odometer, array_of_arrays );
+    	if ((newCombination.length > 0) && (compareTime(newCombination, currBeginning, currEnding)) 
+			&& (blockBreaks(newCombination))) { 
+				output.push( newCombination ); 
+		}
 
-    	if (newCombination.length > 0) { output.push( newCombination ); }
-
-		while (odometer_increment(odometer, array_of_arrays) && output.length < 30) { // or < limit (chosen by user)
+		while (odometer_increment(odometer, array_of_arrays) && output.length < JSON.parse(limit)) {
 			newCombination = formCombination( odometer, array_of_arrays );
-			if (newCombination.length > 0) { output.push( newCombination ); }
+			if ((newCombination.length > 0) && (compareTime(newCombination, currBeginning, currEnding)) 
+				&& (blockBreaks(newCombination))) { 
+					output.push( newCombination ); 
+			}
 		}
 
 		return output;
@@ -183,8 +378,9 @@ function App() {
 	const formCombination = (odometer, array_of_arrays) => {
 		return odometer.reduce(
 			function(accumulator, odometer_value, odometer_index) {
-				if (odometer_index > 0 && accumulator.length === 0) { return []; } // been cleared before
-				else if (odometer_index === 0 || !compareSlots(accumulator, array_of_arrays[odometer_index][odometer_value])) {
+				if (accumulator.length === 0) { return []; } // been cleared before
+				else if (!compareSlots(accumulator, array_of_arrays[odometer_index][odometer_value]) &&
+						compareDay(array_of_arrays[odometer_index][odometer_value])) {
 					const currSlot = array_of_arrays[odometer_index][odometer_value];
 					accumulator.push(currSlot);
 
@@ -193,7 +389,7 @@ function App() {
 							for ( let i = 0; i < currSlot.bundled.length; i++ ) { // adding all bundled objects to combi
 								const bundledObjId = currSlot.bundled[i];
 								const bundledObj = array_of_arrays[odometer_index].find(element => element.slot_id === bundledObjId);
-								if (compareSlots(accumulator, bundledObj)) { // returns true means return []
+								if (compareSlots(accumulator, bundledObj) || !compareDay(bundledObj)) { // returns true means return []
 									accumulator = [];
 									break;
 								} else {
@@ -206,11 +402,11 @@ function App() {
 					}
 
 					return accumulator;
-				} else {
+				} else { // clear array if the new slot clashes with something already in accumulator or falls on off day
 					return [];
 				}
 			},
-			[]			
+			GetFixedSlots().concat()			
 		);
 	}
 
@@ -264,7 +460,8 @@ function App() {
 				(selectedCourses[0].term === "3" && <h4>Your Special Term I Courses</h4>) ||
 				(selectedCourses[0].term === "4" && <h4>Your Special Term II Courses</h4>) ) }
 			{ generated === "true" && <h4>Your Combinations</h4> }
-			<button className="resetButton" onClick={resetPage}>Reset</button>
+			<button className="resetEverythingButton" onClick={resetPage}>Reset Everything</button>
+			<button className="resetButton" onClick={resetButKeepCourses}>Reset (Keep Courses)</button>
 			<div className="courses">
 				{selectedCourses.length > 0 && generated === "false" && selectedCourses.map(course => (
 						<div className={"course"} key={course._id}>
@@ -298,7 +495,7 @@ function App() {
 						<div className="semContent">
 							<select className="choose-semester-input"
 								onChange={e => saveTerm(e.target.value)}>
-								<option selected disabled={true}> -- Select a Semester Below -- </option>
+								<option> -- Select a Semester Below -- </option>
 								<option value="1">Semester 1</option>
 								<option value="2">Semester 2</option>
 								<option value="3">Special Term I</option>
@@ -338,12 +535,132 @@ function App() {
 				) : ''}
 			</div>
 			<div>
-				{ selectedCourses.length > 0 && generated === "false" &&
-					<button className="generateButton" onClick={generateSchedules}>Start Generating!</button>
+			{selectedCourses.length > 0 && generated === "false" && limitpopupActive === false &&
+				<div className="limit" onClick={() => setLimitPopupActive(true)}>Set Limit</div>
+			}
+
+			{limitpopupActive ? (
+					<div className="limitpopup">
+						<div className="closeLimitPopup" onClick={() => setLimitPopupActive(false)}>X</div>
+						<div className="content">
+							<h3>Select A Limit</h3>
+							<h4>This limit will be the maximum number of combinations that are generated.</h4>
+							<h5>Note: the greater the limit, the more time this program will take to complete. Our team is still working on improving efficiency. Thank you for your patience!</h5>
+							<select className="select-limit"
+							onChange={e => { setLimit(e.target.value); setLimitPopupActive(false) }}>
+								<option>Select Limit</option>
+								<option value="5">5</option>
+								<option value="10">10 (Recommended Default)</option>
+								<option value="15">15</option>
+								<option value="20">20</option>
+								<option value="100">100</option>
+							</select>
+						</div>
+					</div>
+				) : ''}
+			</div>
+			<div>
+				{selectedCourses.length > 0 && generated ==="false" && GetFixedSlots().length === 0 &&
+					<button className="generateButton" onClick={e => {setLecSecPopupActive(true); extractSlots()}}>Choose Slots</button>
 				}
+
+				{ lecSecPopupActive ? (
+					<div className="LecSecPopup">
+					<div className="closeLecSecPopup" onClick={() => setLecSecPopupActive(false)}>X</div>
+						<div className="content">
+							<h3>Select Your Lecture and Sectional Slots</h3>
+							<h4>Please select one from each course</h4>
+
+								{GetAOA().filter(course => course[0].CAT.includes("lec") || course[0].CAT.includes("sec"))
+									.map(course => (
+									<select className="add-lec-sec-slot" onChange={e => addFixedSlot(course[0].CAT, e.target.value)}>
+										<option>Select Lecture/Sectional Slot</option>
+										{ [...new Map(course.map((item) => [item["slot_name"], item])).values()].map(slot => (
+											<option value={slot.slot_name}>{slot.CAT} {slot.slot_name}</option>
+										)) }
+									</select>
+								))}
+
+							{GetFixedSlots().length > 0 && GetCourses().length > 0 && findFreeDays().length > 0 &&
+								<select className="choose-off-day" onChange={e => saveOffDay(e.target.value)}>
+									<option>Choose A Day Off</option>
+									{findFreeDays().map(day => (
+										<option value={day}>{day}</option>
+									))}
+								</select>
+							}
+							{ GetFixedSlots().length > 0 && GetCourses().length > 0 &&
+							<button className="GenerateButton" onClick={() => {setLecSecPopupActive(false); setFilterPopupActive(true); updateAOA()}}>Confirm Slots</button>}
+							{ GetFixedSlots().length > 0 && GetCourses().length > 0 &&
+							<button className="MoreFixedSlots" onClick={() => {setLecSecPopupActive(false); setMoreFixedSlotsPopupActive(true)}}>Set More Slots</button>}
+						</div>
+					</div>
+				) : ''}
+				{ moreFixedSlotsPopupActive ? (
+					<div className="LecSecPopup">
+					<div className="closeLecSecPopup" onClick={() => setMoreFixedSlotsPopupActive(false)}>X</div>
+						<div className="content">
+							<h3>Select Your Tutorial and Lab Slots</h3>
+							<h4>Please only select the must-have tut/lab slots, leave the rest to be generated</h4>
+
+								{GetAOA().filter(course => course[0].CAT.includes("tut") || course[0].CAT.includes("lab") || course[0].CAT.includes("rec"))
+									.map(course => (
+									<select className="add-lec-sec-slot" onChange={e => addFixedSlot(course[0].CAT, e.target.value)}>
+										<option>Select Tutorial/Lab Slot</option>
+										{ [...new Map(course.map((item) => [item["slot_name"], item])).values()].map(slot => (
+											<option value={slot.slot_name}>{slot.CAT} {slot.slot_name}</option>
+										)) }
+									</select>
+								))}
+
+							{ GetFixedSlots().length > 0 && GetCourses().length > 0 &&
+							<button className="GenerateButton" onClick={() => {setMoreFixedSlotsPopupActive(false); setFilterPopupActive(true); updateAOA()}}>Confirm Slots</button>}
+						</div>
+					</div>
+				) : ''}
+			</div>
+			<div>
+				{filterPopupActive ? (
+					<div className="filterPopup">
+						<div className="closeFilterPopup" onClick={() => setFilterPopupActive(false)}>X</div>
+							<div className="content">
+								<h3>Select Your Filters</h3>
+								<h4>Start time is the earliest you will start your day. End time is the latest you will end your day.</h4>
+								<select className="choose-beginning-input" onChange={e => saveBeginning(e.target.value)}>
+									<option>Select a Start Time</option>
+									{ // eslint-disable-next-line
+									allBeginnings().map(time => <option value={time}>{time / 100}:00</option>) }
+								</select>
+								<p><br/></p>
+								<select className="choose-ending-input" onChange={e => saveEnding(e.target.value)}>
+									<option>Select an End Time</option>
+									{ // eslint-disable-next-line
+									allEndings().map(time => <option value={time}>{time / 100}:00</option>) }
+								</select>
+								<p><br/></p>
+								<select className="choose-breaks-input" onChange={e => saveBreak(e.target.value)}>
+									<option>Select a Break</option>
+									<option value="">No Break</option>
+									
+									{allBreaks().map(br =>
+										<option value={br.id}>{br.day} {br.startTime} to {br.endTime}</option>
+									)}
+										
+								</select>
+								{GetBreaks().length > 0 && GetBreaks().map(period => (
+									<div className="breaks" key={period.id}>
+										<div className="period">{period.day} {period.startBreak} to {period.endBreak}</div>
+										<div className="delete-period" onClick={() => deletePeriod(period.id)}>X</div>
+									</div>
+								))}		
+							</div>
+							{ GetFixedSlots().length > 0 && GetCourses().length > 0 &&
+							<button className="GenerateButton" onClick={() => {generateSchedules(); setFilterPopupActive(false)}}>Start Generating</button>}
+					</div>
+				) : ''}
 			</div>
 			<div className="combis">
-				{generated === "true" 
+				{generated === "true" && GetAllCombis().length > 0
 					? GetAllCombis().map((combi, index) => (
 							<div className="combi">
 								<button onClick={printCombi(index)} className="print-combi">Download</button>
@@ -360,9 +677,10 @@ function App() {
 									}
 									</table>
 							</div>
-					)) : (
-					<p></p>
-				)}
+					)) : ( generated === "true" && GetAllCombis().length === 0
+							? <h3>Sorry, there are no combinations that fit your criteria.</h3>
+							: (<p></p>)
+						)}
             </div>
 	</div>
   );
