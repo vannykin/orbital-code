@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import {jsPDF} from 'jspdf';
+import 'jspdf-autotable';
 const api_base = 'http://localhost:3001';
 
 function App() {
@@ -23,6 +25,10 @@ function App() {
 	const [fixedSlots, setFixedSlots] = useState(JSON.parse(localStorage.getItem("fixedSlots")) || []);
 	// eslint-disable-next-line
 	const [offDay, setOffDay] = useState(localStorage.getItem('offDay') || "");
+	// eslint-disable-next-line
+	const [currPosition, setCurrPosition] = useState(localStorage.getItem("currPosition")  || 0);
+	// eslint-disable-next-line
+	const [currCombi, setCurrCombi] = useState(JSON.parse(localStorage.getItem("currCombi")) || []);
 	const [selectedCourses, setSelectedCourses] = useState(JSON.parse(localStorage.getItem("selected")) || []);
 	const [term, setTerm] = useState(localStorage.getItem("term") || "0");
 	const [filteredCourses, setFilteredCourses] = useState(JSON.parse(localStorage.getItem("filteredCourses")) || []);
@@ -30,6 +36,8 @@ function App() {
 	const [limit, setLimit] = useState(localStorage.getItem('limit') || "10");
 	const [beginning, setBeginning] = useState(localStorage.getItem("beginning")||"800");
 	const [ending, setEnding] = useState(localStorage.getItem("ending")||"2200");
+	const [prevBtnDis, setPrevBtnDis] = useState(Boolean(localStorage.getItem("prevBtnDis")) || true);
+	const [nextBtnDis, setNextBtnDis] = useState(Boolean(localStorage.getItem("nextBtnDis")) || false);
 
 	useEffect(() => {
 		localStorage.setItem('theme', theme);
@@ -97,6 +105,102 @@ function App() {
 		setOffDay(day);
 	}
 
+	const getCurrPos = () => {
+		return Number(localStorage.getItem("currPosition"));
+	}
+
+	const goPrev = () => {
+		var existing = getCurrPos();
+		if (existing > 0) {
+			localStorage.setItem("currPosition", existing - 1);
+			setCurrPosition(existing - 1);
+			localStorage.setItem("nextBtnDis", false);
+		    setNextBtnDis(false);
+			localStorage.setItem("prevBtnDis", false);
+			setPrevBtnDis(false);
+		} else {
+			localStorage.setItem("prevBtnDis", true);
+			setPrevBtnDis(true);
+			localStorage.setItem("nextBtnDis", false);
+		    setNextBtnDis(false);
+		}
+		SaveCurrCombi();
+	}
+
+	const goNext = () => {
+		var existing = getCurrPos();
+		if (existing < Math.min(Number(limit) - 1, GetAllCombis().length - 1)) {
+			setCurrPosition(existing + 1);
+			localStorage.setItem("currPosition", existing + 1);
+			localStorage.setItem("prevBtnDis", false);
+			setPrevBtnDis(false);
+			localStorage.setItem("nextBtnDis", false);
+			setNextBtnDis(false);
+		} else {
+			localStorage.setItem("prevBtnDis", false);
+			setPrevBtnDis(false);
+			localStorage.setItem("nextBtnDis", true);
+			setNextBtnDis(true);
+		}
+		SaveCurrCombi();
+	}
+
+	const SaveCurrCombi = () => {
+		var existing = GetAllCombis()[getCurrPos()];
+		localStorage.setItem("currCombi", JSON.stringify(existing));
+		setCurrCombi(existing);
+	}
+
+	const GetCurrCombi = () => {
+		return JSON.parse(localStorage.getItem("currCombi"));
+	}
+
+	const OrganizeSlots = (day) => {
+		var existing = GetCurrCombi(); // type: array
+		let timing = new Array(12);
+		timing.fill("");
+		let target = Array.from(existing).filter(slot => slot.day === day);
+		
+			for (let j = 0; j < target.length; j++) {
+				let slot = target[j];
+				let start = (slot.startTime - 800) / 100;
+				let end = (slot.endTime - 800) / 100;
+				for (let i = start; i < end; i++) {
+					timing[i] = slot.CAT + " " + slot.slot_name;
+				}
+			}
+		return timing;
+	}
+		
+	function exportTable() {
+		var pdf = new jsPDF();
+		pdf.autoTable({html:"#combiInfo",
+		startY: 25,
+		theme: "grid",
+		/* columnStyles: {
+			0:{cellWidth:20},
+			1:{cellWidth:20},
+			2:{cellWidth:20},
+			3:{cellWidth:20},
+			4:{cellWidth:20},
+			5:{cellWidth:20},
+			6:{cellWidth:20},
+			7:{cellWidth:20},
+			8:{cellWidth:20},
+			9:{cellWidth:20},
+			10:{cellWidth:20},
+			11:{cellWidth:20},
+			12:{cellWidth:20},
+		}, */
+		styles: {
+			meanCellHeight:10
+		}
+
+		});
+		window.open(URL.createObjectURL(pdf.output("blob")))
+
+	}
+
 	const deletePeriod = id => {
 		var existing = GetBreaks(); 
 		const newArray = existing.filter(period => period.id !== id);
@@ -154,6 +258,14 @@ function App() {
 		setFixedSlots([]);
 		localStorage.setItem("offDay", "");
 		setOffDay("");
+		localStorage.setItem("currPosition", 0);
+		setCurrPosition(0);
+		localStorage.setItem("currCombi", JSON.stringify([]));
+		setCurrCombi([]);
+		localStorage.setItem("prevBtnDis", true);
+		setPrevBtnDis(true);
+		localStorage.setItem("nextBtnDis", false);
+		setNextBtnDis(false);
 	}
 
 	const resetButKeepCourses = () => {
@@ -175,6 +287,14 @@ function App() {
 		setFixedSlots([]);
 		localStorage.setItem("offDay", "");
 		setOffDay("");
+		localStorage.setItem("currPosition", 0);
+		setCurrPosition(0);
+		localStorage.setItem("currCombi", JSON.stringify([]));
+		setCurrCombi([]);
+		localStorage.setItem("prevBtnDis", true);
+		setPrevBtnDis(true);
+		localStorage.setItem("nextBtnDis", false);
+		setNextBtnDis(false);
 	}
 
 	const saveTerm = term => {
@@ -285,6 +405,8 @@ function App() {
 		setAllCombis(existing);
 		setGenerated('true');
 		localStorage.setItem("generated", 'true');
+		setCurrCombi(existing[0]);
+		localStorage.setItem("currCombi", JSON.stringify(existing[0]));
 	}
 
 	const compareTime = (combi, currBeginning, currEnding) => {
@@ -433,10 +555,6 @@ function App() {
 			}
 		}
 		
-	}
-
-	const printCombi = index => {
-		// print allCombis.filter(combi => combi.length > 0)[index]
 	}
 
 	const filterCourses = (searchTerm) => {
@@ -661,26 +779,57 @@ function App() {
 			</div>
 			<div className="combis">
 				{generated === "true" && GetAllCombis().length > 0
-					? GetAllCombis().map((combi, index) => (
-							<div className="combi">
-								<button onClick={printCombi(index)} className="print-combi">Download</button>
-									<table>
-										<tr><th>Combination {index + 1}:</th></tr>
-										{ combi.map((slot, id) => (
-										<div className="slotInfo">
-											<tr>
-												<td>{slot.CAT} {slot.slot_name}:</td>
-												<td>{slot.day} from {slot.startTime} to {slot.endTime}</td>
-											</tr>
-										</div>
-									))
-									}
-									</table>
-							</div>
-					)) : ( generated === "true" && GetAllCombis().length === 0
+					? (<div className="combi">
+					<button className="prevBtn" onClick={goPrev} disabled={prevBtnDis}>Previous</button>
+					<button className="nextBtn" onClick={goNext} disabled={nextBtnDis}>Next</button>
+					<head>
+					<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+					<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+					</head>
+					<table className="combiInfo" id="combiInfo">
+						<tr>
+							<th>Combination {Number(getCurrPos() + 1)}:</th>
+							<th>8am - 9am</th>
+							<th>9am - 10am</th>
+							<th>10am - 11am</th>
+							<th>11am - 12pm</th>
+							<th>12pm - 1pm</th>
+							<th>1pm - 2pm</th>
+							<th>2pm - 3pm</th>
+							<th>3pm - 4pm</th>
+							<th>4pm - 5pm</th>
+							<th>5pm - 6pm</th>
+							<th>6pm - 7pm</th>
+							<th>7pm - 8pm</th>
+						</tr>
+						<tr id="Mon">
+							<td>Monday</td>
+							{OrganizeSlots("Monday").map(content => (<td>{content}</td>))}
+						</tr>
+						<tr id="Tue">
+							<td>Tuesday</td>
+							{OrganizeSlots("Tuesday").map(content => (<td>{content}</td>))}
+						</tr>
+						<tr id="Wed">
+							<td>Wednesday</td>
+							{OrganizeSlots("Wednesday").map(content => (<td>{content}</td>))}
+						</tr>
+						<tr id="Thu">
+							<td>Thursday</td>
+							{OrganizeSlots("Thursday").map(content => (<td>{content}</td>))}
+						</tr>
+						<tr id="Fri">
+							<td>Friday</td>
+							{OrganizeSlots("Friday").map(content => (<td>{content}</td>))}
+						</tr>
+					</table>
+					<button className="downloadBtn" id="export" onClick={exportTable}>Save as PDF</button>	
+					</div>
+				) : (generated === "true" && GetAllCombis().length === 0
 							? <h3>Sorry, there are no combinations that fit your criteria.</h3>
 							: (<p></p>)
-						)}
+					)
+				}
             </div>
 	</div>
   );
