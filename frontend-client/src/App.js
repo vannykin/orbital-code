@@ -157,43 +157,53 @@ function App() {
 
 	const OrganizeSlots = (day) => {
 		var existing = GetCurrCombi(); // type: array
-		let timing = new Array(12);
+		let timing = new Array(28);
+		let final = [];
+		let frequency = Object.create(null); // e.g. { "CS2030S lec 1": 2, "CS2100 lec 2": 3 }
 		timing.fill("");
 		let target = Array.from(existing).filter(slot => slot.day === day);
 		
-			for (let j = 0; j < target.length; j++) {
-				let slot = target[j];
-				let start = (slot.startTime - 800) / 100;
-				let end = (slot.endTime - 800) / 100;
-				for (let i = start; i < end; i++) {
-					timing[i] = slot.CAT + " " + slot.slot_name;
-				}
+		for (let j = 0; j < target.length; j++) {
+			let slot = target[j];
+			let start = Math.round((slot.startTime - 800) / 50);
+			let end = Math.round((slot.endTime - 800) / 50);
+			for (let i = start; i < end; i++) {
+				timing[i] = slot.CAT + " " + slot.slot_name;
 			}
-		return timing;
+		}
+
+		for (let m = 0; m < 28; m++) {
+			if (timing[m] !== "") {
+				frequency[timing[m]] = timing.filter(e => e === timing[m]).length;
+			} 
+		}
+
+		for (let n = 0; n < 28; n++) {
+			if (Object.keys(frequency).includes(timing[n]) && (final.map(e => e[0]).filter(e => e === timing[n]).length === 0)) {
+				final.push([timing[n], frequency[timing[n]]]);
+			} else if (timing[n] !== "" && final.map(e => e[0]).filter(e => e === timing[n]).length !== 0) {
+				continue;
+			} else {
+				final.push(["", 1]);
+			}
+		}
+		return final; // [ ["", 1], ["CS2040S lec 1", 4], ["", 3], ["CS2100 lec 2", 5] ]
 	}
 		
 	function exportTable() {
-		var pdf = new jsPDF();
+		var pdf = new jsPDF('landscape');
 		pdf.autoTable({html:"#combiInfo",
-		startY: 25,
+		startY: 50,
+		startX: 10,
 		theme: "grid",
-		/* columnStyles: {
-			0:{cellWidth:20},
-			1:{cellWidth:20},
-			2:{cellWidth:20},
-			3:{cellWidth:20},
-			4:{cellWidth:20},
-			5:{cellWidth:20},
-			6:{cellWidth:20},
-			7:{cellWidth:20},
-			8:{cellWidth:20},
-			9:{cellWidth:20},
-			10:{cellWidth:20},
-			11:{cellWidth:20},
-			12:{cellWidth:20},
-		}, */
+		columnStyles: {
+			0: { columnWidth: 20 }
+		},
 		styles: {
-			meanCellHeight:10
+			cellWidth: 'auto',
+			halign: 'center',
+			valign: 'middle',
+			font: 'sans-serif'
 		}
 
 		});
@@ -788,39 +798,56 @@ function App() {
 					</head>
 					<table className="combiInfo" id="combiInfo">
 						<tr>
-							<th>Combination {Number(getCurrPos() + 1)}:</th>
-							<th>8am - 9am</th>
-							<th>9am - 10am</th>
-							<th>10am - 11am</th>
-							<th>11am - 12pm</th>
-							<th>12pm - 1pm</th>
-							<th>1pm - 2pm</th>
-							<th>2pm - 3pm</th>
-							<th>3pm - 4pm</th>
-							<th>4pm - 5pm</th>
-							<th>5pm - 6pm</th>
-							<th>6pm - 7pm</th>
-							<th>7pm - 8pm</th>
+							<th>Combi {Number(getCurrPos() + 1)}:</th>
+							<th colSpan="2">8 - 9am</th>
+							<th colSpan="2">9 - 10am</th>
+							<th colSpan="2">10 - 11am</th>
+							<th colSpan="2">11am - 12pm</th>
+							<th colSpan="2">12 - 1pm</th>
+							<th colSpan="2">1 - 2pm</th>
+							<th colSpan="2">2 - 3pm</th>
+							<th colSpan="2">3 - 4pm</th>
+							<th colSpan="2">4 - 5pm</th>
+							<th colSpan="2">5 - 6pm</th>
+							<th colSpan="2">6 - 7pm</th>
+							<th colSpan="2">7 - 8pm</th>
+							<th colSpan="2">8 - 9pm</th>
+							<th colSpan="2">9 - 10pm</th>
 						</tr>
 						<tr id="Mon">
 							<td>Monday</td>
-							{OrganizeSlots("Monday").map(content => (<td>{content}</td>))}
+							{OrganizeSlots("Monday").map(content => {
+								if (content[0] !== "") { return <td colSpan={content[1]} className="contains">{content[0]}</td>; }
+								else { return <td colSpan={content[1]} className="empty">{content[0]}</td>; }
+							})}
 						</tr>
 						<tr id="Tue">
 							<td>Tuesday</td>
-							{OrganizeSlots("Tuesday").map(content => (<td>{content}</td>))}
+							{OrganizeSlots("Tuesday").map(content => {
+								if (content[0] !== "") { return <td colSpan={content[1]} className="contains">{content[0]}</td>; }
+								else { return <td colSpan={content[1]} className="empty">{content[0]}</td>; }
+							})}
 						</tr>
 						<tr id="Wed">
 							<td>Wednesday</td>
-							{OrganizeSlots("Wednesday").map(content => (<td>{content}</td>))}
+							{OrganizeSlots("Wednesday").map(content => {
+								if (content[0] !== "") { return <td colSpan={content[1]} className="contains">{content[0]}</td>; }
+								else { return <td colSpan={content[1]} className="empty">{content[0]}</td>; }
+							})}
 						</tr>
 						<tr id="Thu">
 							<td>Thursday</td>
-							{OrganizeSlots("Thursday").map(content => (<td>{content}</td>))}
+							{OrganizeSlots("Thursday").map(content => {
+								if (content[0] !== "") { return <td colSpan={content[1]} className="contains">{content[0]}</td>; }
+								else { return <td colSpan={content[1]} className="empty">{content[0]}</td>; }
+							})}
 						</tr>
 						<tr id="Fri">
 							<td>Friday</td>
-							{OrganizeSlots("Friday").map(content => (<td>{content}</td>))}
+							{OrganizeSlots("Friday").map(content => {
+								if (content[0] !== "") { return <td colSpan={content[1]} className="contains">{content[0]}</td>; }
+								else { return <td colSpan={content[1]} className="empty">{content[0]}</td>; }
+							})}
 						</tr>
 					</table>
 					<button className="downloadBtn" id="export" onClick={exportTable}>Save as PDF</button>	

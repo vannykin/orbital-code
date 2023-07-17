@@ -6,6 +6,7 @@
 	--dark: #131A26;
 	--dark-alt: #202B3E;
 	--delete: #AF1E2D;
+	--slot: #B6A668;
 }
 
 .light {
@@ -16,6 +17,7 @@
 	--dark: #FAD5B0;
 	--dark-alt: #fef9ef;
 	--delete: rgb(255, 60, 0);
+	--slot: #FAD5B0;
 }
 
 label {
@@ -371,30 +373,53 @@ h4 {
 table, td, th {
 	font-size: 18px;
 	padding: 16px;
+}
+
+tr {
+	border-bottom: 1px solid;
+	border-color: grey;
+}
+
+th {
 	border: 1px solid;
+	border-color: grey;
 }
 
 td {
 	width: fixed;
-	width: 188px;
+	width: 160px;
+	text-align: center;
+	font-weight: bold;
 }
 
-td:nth-child(1) {
-	width: 180px !important;
+.contains {
+	border-collapse: collapse;
+	border-radius: 8px;
+	background-color: var(--slot);
 }
-  
-/* td:nth-child(2) {
-	width: 350px;
-} */
+
+.empty {
+	border-collapse: collapse;
+}
+
+td:nth-child(1) { 
+	width: 132px !important;
+	border: 1px solid;
+	border-color: grey;
+}
+
+td:last-child {
+	border-right: 1px solid;
+	border-color: grey;
+}
   
 table {
 	border-collapse: collapse;
-	background-color: var(--dark);
+	background-color: var(--dark-alt);
 	max-width: 100%;
 	position: relative;
 	display: table;
 	margin-bottom: 8px;
-	border-radius: 16px;
 }
 
 /* .combis {
